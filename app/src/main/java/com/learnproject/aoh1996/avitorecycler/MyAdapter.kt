@@ -31,7 +31,7 @@ class MyAdapter() : RecyclerView.Adapter<MyAdapter.MyViewHolder>() {
         if (mDiffer.currentList.isEmpty()) {
             holder.idTextView.text = "No element"
         } else {
-            //val element = mDiffer.currentList[position]
+
             holder.idTextView.text = position.toString()
             holder.deleteImageButton.setOnClickListener {
 
@@ -40,9 +40,6 @@ class MyAdapter() : RecyclerView.Adapter<MyAdapter.MyViewHolder>() {
                     val currentPosition = holder.adapterPosition
                     val elementToRemove = mDiffer.currentList[currentPosition]
                     viewModel.deleteElement(elementToRemove, currentPosition)
-//                    mDiffer.currentList.drop(currentPosition)
-//                    notifyItemRemoved(currentPosition)
-//                    notifyItemRangeChanged(currentPosition, mDiffer.currentList.size)
 //                    Log.d(TAG, "Removed element position: $currentPosition" +
 //                            "\nRemoved element id: $elementToRemove")
                 } finally {
