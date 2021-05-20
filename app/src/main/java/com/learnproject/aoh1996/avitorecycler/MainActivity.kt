@@ -1,9 +1,11 @@
 package com.learnproject.aoh1996.avitorecycler
 
+import android.app.Activity
+import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.TextView
-import androidx.activity.viewModels
+import android.provider.Settings.System.getConfiguration
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
@@ -15,24 +17,49 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val viewModel by viewModels<MyViewModel>()
-        val list = viewModel.elements.value
+        val viewModel = MyViewModel.getInstance()
+        //val list = viewModel.elementsLiveData.value
+
+         var spanCount = 2
+
+        when(this.resources.configuration.orientation) {
+            Configuration.ORIENTATION_PORTRAIT -> {
+                spanCount = 2
+            }
+            Configuration.ORIENTATION_LANDSCAPE -> {
+                spanCount = 4
+            }
+
+            Configuration.ORIENTATION_UNDEFINED -> {
+                spanCount = 2
+            }
+        }
 
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
-        val myAdapter = list?.let { MyAdapter(it) }
-        val linearLayoutManager = LinearLayoutManager(this)
-        linearLayoutManager.setStackFromEnd(true)
+        val myAdapter = MyAdapter()
 
-        recyclerView.layoutManager = linearLayoutManager
+        val linearLayoutManager = LinearLayoutManager(this)
+        linearLayoutManager.stackFromEnd = true
+        recyclerView.layoutManager = GridLayoutManager(this, spanCount)
+
+        viewModel.elementsLiveData.observe(this, { elements ->
+            myAdapter.submitList(elements, (viewModel.insertPositionLiveData.value ?: 0))
+        })
         recyclerView.adapter = myAdapter
 
 
-        viewModel.elements.observe(this, { elements ->
-            myAdapter?.notifyItemInserted(elements.size)
-            recyclerView.scrollToPosition(elements.size - 1)
-        })
 
+//        viewModel.elementsLiveData.observe(this, { elements ->
+//            myAdapter?.notifyItemInserted(2)
+//            recyclerView.scrollToPosition(2)
+//        })
+
+//        viewModel.insertPositionLiveData.observe(this, {i ->
+//
+//            myAdapter?.notifyItemInserted(i)
+//            myAdapter?.notifyItemRangeChanged(i, viewModel.elements.size)
+////            recyclerView.scrollToPosition(i)
+//        })
 
     }
-
 }

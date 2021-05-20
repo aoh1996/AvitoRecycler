@@ -1,14 +1,21 @@
 package com.learnproject.aoh1996.avitorecycler
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 
-class MyAdapter(private var elementsList: List<Element>) : RecyclerView.Adapter<MyAdapter.MyViewHolder>() {
+private const val TAG = "MyAdapter"
+
+class MyAdapter() : RecyclerView.Adapter<MyAdapter.MyViewHolder>() {
+
+    val viewModel = MyViewModel.getInstance()
+    val mDiffer = AsyncListDiffer(this, DiffCallback)
 
     class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val idTextView = itemView.findViewById<TextView>(R.id.idTextView)
@@ -21,15 +28,50 @@ class MyAdapter(private var elementsList: List<Element>) : RecyclerView.Adapter<
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        if (elementsList.isEmpty()) {
+        if (mDiffer.currentList.isEmpty()) {
             holder.idTextView.text = "No element"
         } else {
-            val element = elementsList[position]
-            holder.idTextView.text = element.id.toString()
+            val element = mDiffer.currentList[position]
+            holder.idTextView.text = position.toString()
+            holder.deleteImageButton.setOnClickListener {
+
+                try {
+                    viewModel.mutex.lock()
+                    val currentPosition = holder.adapterPosition
+                    val elementToRemove = mDiffer.currentList[currentPosition]
+                    viewModel.deleteElement(elementToRemove)
+                    mDiffer.currentList.drop(currentPosition)
+                    notifyItemRemoved(currentPosition)
+                    notifyItemRangeChanged(currentPosition, mDiffer.currentList.size)
+                    Log.d(TAG, "Removed element position: $currentPosition" +
+                            "\nRemoved element id: $elementToRemove")
+                } finally {
+                    viewModel.mutex.unlock()
+                }
+
+
+            }
         }
     }
 
+    fun submitList(list: List<Element>, position: Int){
+        mDiffer.submitList(list)
+        notifyItemInserted(position)
+        notifyItemRangeChanged(position, mDiffer.currentList.size)
+    }
+
     override fun getItemCount(): Int {
-        return elementsList.size
+        return mDiffer.currentList.size
+    }
+
+    companion object DiffCallback: DiffUtil.ItemCallback<Element>() {
+        override fun areItemsTheSame(oldItem: Element, newItem: Element): Boolean {
+            return oldItem == newItem
+        }
+
+        override fun areContentsTheSame(oldItem: Element, newItem: Element): Boolean {
+            return oldItem.equals(newItem)
+        }
+
     }
 }
