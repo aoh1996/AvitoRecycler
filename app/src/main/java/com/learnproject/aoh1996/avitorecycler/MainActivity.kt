@@ -1,10 +1,9 @@
 package com.learnproject.aoh1996.avitorecycler
 
-import android.app.Activity
+
 import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.provider.Settings.System.getConfiguration
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -43,7 +42,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = GridLayoutManager(this, spanCount)
 
         viewModel.elementsLiveData.observe(this, { elements ->
-            myAdapter.submitList(elements, (viewModel.insertPositionLiveData.value ?: 0))
+            myAdapter.submitList(elements, (viewModel.editPositionLiveData.value ?: 0), viewModel.operation)
         })
         recyclerView.adapter = myAdapter
 

@@ -31,7 +31,7 @@ class MyAdapter() : RecyclerView.Adapter<MyAdapter.MyViewHolder>() {
         if (mDiffer.currentList.isEmpty()) {
             holder.idTextView.text = "No element"
         } else {
-            val element = mDiffer.currentList[position]
+            //val element = mDiffer.currentList[position]
             holder.idTextView.text = position.toString()
             holder.deleteImageButton.setOnClickListener {
 
@@ -39,12 +39,12 @@ class MyAdapter() : RecyclerView.Adapter<MyAdapter.MyViewHolder>() {
                     viewModel.mutex.lock()
                     val currentPosition = holder.adapterPosition
                     val elementToRemove = mDiffer.currentList[currentPosition]
-                    viewModel.deleteElement(elementToRemove)
-                    mDiffer.currentList.drop(currentPosition)
-                    notifyItemRemoved(currentPosition)
-                    notifyItemRangeChanged(currentPosition, mDiffer.currentList.size)
-                    Log.d(TAG, "Removed element position: $currentPosition" +
-                            "\nRemoved element id: $elementToRemove")
+                    viewModel.deleteElement(elementToRemove, currentPosition)
+//                    mDiffer.currentList.drop(currentPosition)
+//                    notifyItemRemoved(currentPosition)
+//                    notifyItemRangeChanged(currentPosition, mDiffer.currentList.size)
+//                    Log.d(TAG, "Removed element position: $currentPosition" +
+//                            "\nRemoved element id: $elementToRemove")
                 } finally {
                     viewModel.mutex.unlock()
                 }
@@ -54,10 +54,27 @@ class MyAdapter() : RecyclerView.Adapter<MyAdapter.MyViewHolder>() {
         }
     }
 
-    fun submitList(list: List<Element>, position: Int){
-        mDiffer.submitList(list)
-        notifyItemInserted(position)
-        notifyItemRangeChanged(position, mDiffer.currentList.size)
+    fun submitList(list: List<Element>, position: Int, operation: Operation){
+
+        Log.d(TAG, "submitList() called with operation $operation on position $position ")
+
+        when(operation) {
+            Operation.ADD -> {
+                mDiffer.submitList(list)
+                notifyItemInserted(position)
+                notifyItemRangeChanged(position, mDiffer.currentList.size)
+            }
+            Operation.REMOVE -> {
+                notifyItemRemoved(position)
+                Log.d(TAG, "notifyItemRemoved() called on position $position")
+                notifyItemRangeChanged(position, mDiffer.currentList.size)
+                Log.d(TAG, "notifyItemRangeChanged() $position - ${mDiffer.currentList.size} ")
+                mDiffer.submitList(list)
+
+            }
+            Operation.NO -> {}
+        }
+
     }
 
     override fun getItemCount(): Int {

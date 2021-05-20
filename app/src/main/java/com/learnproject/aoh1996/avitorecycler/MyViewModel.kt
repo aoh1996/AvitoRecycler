@@ -10,24 +10,28 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import java.lang.Thread.sleep
+import java.text.FieldPosition
 import java.util.*
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 private const val TAG = "MyViewModel"
 
 class MyViewModel : ViewModel() {
 
     var elements = Collections.synchronizedList(ArrayList<Element>())
-    var deletedElements = Collections.synchronizedList(ArrayList<Element>())
+    var deletedElements = Collections.synchronizedMap(HashMap<Element, Int>())
 
     val mutex = ReentrantLock()
 
     private val _elementsLivaData = MutableLiveData<List<Element>>()
     val elementsLiveData: LiveData<List<Element>> = _elementsLivaData
 
-    private val _insertPositionLiveData = MutableLiveData<Int>()
-    val insertPositionLiveData: LiveData<Int> = _insertPositionLiveData
+    private val _editPositionLiveData = MutableLiveData<Int>()
+    val editPositionLiveData: LiveData<Int> = _editPositionLiveData
+
+    var operation = Operation.NO
 
 
     init {
@@ -46,6 +50,7 @@ class MyViewModel : ViewModel() {
             mockupList.add(Element())
         }
         elements = mockupList
+        operation = Operation.ADD
         _elementsLivaData.value = elements
         Log.d(TAG, "loadMockupElements: end")
     }
@@ -58,19 +63,25 @@ class MyViewModel : ViewModel() {
                 delay(5000)
                 try {
                     mutex.lock()
-                    val insertPosition = (0..elements.size).random()
-                    _insertPositionLiveData.postValue(insertPosition)
+
+
                     if (deletedElements.isEmpty()) {
                         val newElement = Element()
+                        val insertPosition = (0..elements.size).random()
+                        _editPositionLiveData.postValue(insertPosition)
                         elements.add(insertPosition, newElement)
                         _elementsLivaData.postValue(elements)
                     } else {
-                        val newElement = deletedElements[(0..(deletedElements.size - 1)).random()]
-                        elements.add(insertPosition, newElement)
+                        val deletedKeys = deletedElements.keys.toTypedArray()
+                        val newElement = deletedKeys[(0..deletedKeys.size).random()]
+                        val insertPosition = deletedElements[newElement]
+                        _editPositionLiveData.postValue(insertPosition!!)
+                        elements.add(insertPosition!!, newElement)
                         _elementsLivaData.postValue(elements)
                         deletedElements.remove(newElement)
                     }
                 } finally {
+                    operation = Operation.ADD
                     mutex.unlock()
                 }
 
@@ -109,9 +120,14 @@ class MyViewModel : ViewModel() {
 
     }
 
-    fun deleteElement(e: Element) {
-        deletedElements.add(e)
+    fun deleteElement(e: Element, pos: Int) {
+        Log.d(TAG, "deleteElement() called on element $e with position $pos ")
+        operation = Operation.REMOVE
+        Log.d(TAG, "deleteElement() operation = $operation ")
+        _editPositionLiveData.postValue(pos)
+        deletedElements[e] = pos
         elements.remove(e)
+        _elementsLivaData.postValue(elements)
     }
 
     companion object {
