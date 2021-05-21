@@ -75,9 +75,18 @@ class MyViewModel : ViewModel() {
                 elements.add(insertPosition, newElement)
                 _elementsLivaData.postValue(elements)
             } else {
-                val deletedKeys = deletedElements.keys.toTypedArray()
-                val newElement = deletedKeys[(0..(deletedKeys.size - 1)).random()]
-                val insertPosition = deletedElements[newElement]
+                val deletedKeys = deletedElements.keys.toTypedArray<Element>()
+                var r: Int = (0..(deletedKeys.size - 1)).random()
+                var newElement: Element = deletedKeys[r]
+                var insertPosition =  deletedElements[newElement]
+                while (deletedElements[newElement]!! > elements.size) {
+                    r = (0..(deletedKeys.size - 1)).random()
+                    Log.d(TAG, "insertElement: $r")
+                    newElement = deletedKeys[r]
+                    insertPosition =  deletedElements[newElement]
+                }
+                Log.d(TAG, "insertElement: position ${deletedElements[newElement]}")
+
                 _editPositionLiveData.postValue(insertPosition!!)
                 elements.add(insertPosition, newElement)
                 _elementsLivaData.postValue(elements)
